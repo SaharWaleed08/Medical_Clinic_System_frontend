@@ -29,7 +29,7 @@ export class Auth {
       map((r) => {
         if (!r.role) throw new Error('MISSING_ROLE');
         const s: Session = { id: r.id, name: r.name, role: String(r.role).toUpperCase() as Role, token: r.token, exp: tokenExpiry(r.token) };
-        try { localStorage.setItem(KEY, JSON.stringify(s)); } catch { /* ignore */ }
+        try { sessionStorage.setItem(KEY, JSON.stringify(s)); } catch { /* ignore */ }
         this.session.set(s);
         this.schedule(s.exp);
         return s;
@@ -76,8 +76,8 @@ export class Auth {
 
 function read(): Session | null {
   try {
-    const s: Session | null = JSON.parse(localStorage.getItem(KEY) ?? 'null');
-    if (s?.exp && s.exp <= Date.now()) { localStorage.removeItem(KEY); return null; }
+    const s: Session | null = JSON.parse(sessionStorage.getItem(KEY) ?? 'null');
+    if (s?.exp && s.exp <= Date.now()) { sessionStorage.removeItem(KEY); return null; }
     return s;
   } catch { return null; }
 }
