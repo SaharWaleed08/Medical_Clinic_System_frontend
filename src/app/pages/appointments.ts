@@ -41,7 +41,7 @@ type Action = 'confirm' | 'cancel' | 'complete' | 'no-show';
                   @for (x of actions(a); track x.action) {
                     <button class="mini" type="button" (click)="run(a, x.action)">{{ x.label | t }}</button>
                   }
-                  @if (role === 'DOCTOR' && (a.status === 'CONFIRMED' || a.status === 'COMPLETED')) {
+                  @if (role === 'DOCTOR' && (a.status === 'CONFIRMED' || a.status === 'COMPLETED') && !recorded().has(a.id)) {
                     <button class="mini" type="button" (click)="openRecord(a)">{{ 'rec.add' | t }}</button>
                   }
                 </div>
@@ -88,6 +88,7 @@ export class AppointmentsPage implements OnInit {
   loading = signal(false);
   status = signal('');
   record = signal<any>(null);
+  recorded = signal<Set<string>>(new Set());
   size = MAX_SIZE;
 
   /** Admin filters on the server; doctor / patient filter the loaded page. */
@@ -96,7 +97,11 @@ export class AppointmentsPage implements OnInit {
     return this.role !== 'ADMIN' && s ? this.rows().filter((a) => a.status === s) : this.rows();
   });
 
-  ngOnInit() { this.load(); }
+  ngOnInit() { this.load(); this.loadRecorded(); }
+  /** Appointments that already have a medical record (one record per appointment). */
+  loadRecorded() {
+    if (this.role === 'DOCTOR') this.api.medicalRecords().subscribe((l) => this.recorded.set(new Set(l.map((r) => r.appointmentID))));
+  }
   load() {
     this.loading.set(true);
     const id = this.auth.session()!.id;
@@ -128,7 +133,7 @@ export class AppointmentsPage implements OnInit {
   saveRecord() {
     const f = this.record();
     this.api.createMedicalRecord({ appointmentID: f.appointmentID, diagnosis: f.diagnosis, medicalNotes: f.medicalNotes, recordCreationDate: todayStr() })
-      .subscribe(() => { this.record.set(null); this.toast.show(this.i18n.t('c.done')); });
+      .subscribe(() => { this.record.set(null); this.toast.show(this.i18n.t('c.done')); this.loadRecorded(); });
   }
   run(a: Appointment, action: Action) {
     this.api.appointmentAction(a.id, action).subscribe(() => { this.toast.show(this.i18n.t('c.done')); this.load(); });

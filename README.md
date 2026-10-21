@@ -4,12 +4,16 @@ Angular 20 (standalone components, signals) frontend for the Spring Boot `medica
 Arabic / English (RTL / LTR), light / dark mode, and a different set of pages for Admin, Doctor and Patient.
 Works with the JWT version of the backend (login returns `id, name, role, token`; every request sends `Authorization: Bearer <token>`).
 
-## 1) Backend changes (files in `backend-changes/`)
+## 1) Backend
 
-1. `SecurityConfig.patch.txt` — enable CORS in the security chain + public `GET /api/specializations`.
-2. `AppointmentGetController.java` (+ `AppointmentService.addition.txt`, `AppointmentRepository.addition.txt`) —
-   the current controller has two handlers on the same URL shape (`/{status}` and `/{id}`), so Spring answers 500,
-   and there is no endpoint for the admin to list appointments. The fix is `GET /api/appointments?status=&start=&end=`.
+The frontend is written for the latest backend zip: JWT login (`id, name, role, token`), one active session per account,
+`POST /api/auth/logout`, patient records/prescriptions endpoints, `GET /api/appointments?status=&start=&end=` for the admin,
+and doctor-only lists that return only the logged-in doctor's records. Nothing else needs to change in the backend.
+(The old files in `backend-changes/` were already applied; they are kept for reference.)
+
+**Sessions:** the token lives 15 minutes (`security.jwt.expiration-ms`). The frontend logs out automatically when it expires,
+and the Log out button calls `POST /api/auth/logout`. If someone closes the tab without logging out, the account stays
+"already logged in" (409) until the token expires.
 
 ## 2) Run
 
@@ -34,14 +38,11 @@ Backend on `http://localhost:8080` (change it in `src/environments/environment.t
 
 ## Records & prescriptions
 
-- **Doctor**: on "My appointments", a CONFIRMED / COMPLETED appointment has an "Add record" button (POST /api/medical-record).
-  On the Records page each record has "+ Prescription" (POST /api/prescription) and delete buttons.
-- **Patient**: "My medical record" shows their own records and prescriptions. It needs two endpoints that are in
-  `backend-changes/PatientRecordsController.java` (+ `RecordsService.additions.txt` for the repository/service methods):
-  `GET /api/patients/{id}/medical-records` and `GET /api/patients/{id}/prescriptions`.
+- **Doctor** (Records page): "+ Add record" (choose one of your confirmed / completed appointments that has no record yet),
+  "+ Prescription" on a record or at the top, delete buttons. "My appointments" also has an "Add record" button.
+- **Patient**: "My medical record" shows their own records (with doctor and visit date) and prescriptions.
 
-## Known gaps in the backend
+## Notes
 
-- `GET /api/medical-records` and `/api/prescriptions` (doctor) return **everyone's** data, not only the logged-in doctor's.
 - `DoctorResponse` has no `yearsOfExperience`; sorting by experience works, but the number is not shown.
 - The API caps page size at 10, so the frontend loads extra pages when it needs everything (booking, dashboards).

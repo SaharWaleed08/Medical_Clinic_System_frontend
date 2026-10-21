@@ -16,7 +16,7 @@ export interface Appointment {
   appointmentDateTime: string; reasonForVisit: string; status: AppointmentStatus;
 }
 export interface Specialization { specializationID: string; name: string; description: string; }
-export interface MedicalRecord { medicalRecordID: string; patientID: string; appointmentID?: string; diagnosis: string; medicalNotes: string; }
+export interface MedicalRecord { medicalRecordID: string; patientID: string; appointmentID: string; diagnosis: string; medicalNotes: string; }
 export interface Prescription {
   prescriptionID: string; recordID: string; medicationName: string; dosage: number;
   frequency: number; treatmentDuration: number; additionalInstruction: string;
